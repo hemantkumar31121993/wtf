@@ -16,15 +16,15 @@ SP -->	|--------------|
 	|--------------|
 	| Register R0  |
 	|--------------|
-	| Argument N   |
-	|--------------|
-	| Argument N-1 |
-	|--------------|
-	|	       |
+	| Argument 1   |
 	|--------------|
 	| Argument 2   |
 	|--------------|
-	| Argument 1   |
+	|	       |
+	|--------------|
+	| Argument N-1 |
+	|--------------|
+	| Argument N   |
 	|--------------| 
 
 After the return from the function call, callee has to pop out the arguments from the
@@ -39,6 +39,14 @@ int codegen(FILE * fp, struct Tnode *node) {
 			codegen(fp,node->ptr2);
 			return -1;
 		}
+		
+		else if(node->nodetype == BODY) {
+			codegen(fp,node->ptr1);
+			int i = codegen(fp,node->ptr2), k = getreg(fp);
+			fprintf(fp,"MOV BP R%d\nSUB R%d, 2\nMOV R%d, [R%d]\n",k,k,i,k);
+			freereg(fp);
+			freereg(fp);
+		}
 		else if(node->nodetype == NUM) {
 			int i = getreg(fp);
 			fprintf(fp,"MOV R%d %d\n",i,node->value);
@@ -46,9 +54,40 @@ int codegen(FILE * fp, struct Tnode *node) {
 		}
 	
 		else if(node->nodetype == ID) {
+
 			if(node->ptr1 == NULL) {
-				int i = getreg(fp);
-				fprintf(fp,"MOV R%d [%d]\n",i,node->gentry->binding);
+				int i = getreg(fp), k;
+				if( node->gentry != NULL)	//for global variable
+					fprintf(fp,"MOV R%d [%d]\n",i,node->gentry->binding);
+				else {
+					k = node->lentry->binding;
+					if(k>0) {
+						//for local variable of the function
+						int l = getreg(fp);
+						fprintf(fp, "MOV R%d, BP\nADD R%d, %d\n",l,l,k);
+						fprintf(fp, "MOV R%d, [R%d]\n",i,l);
+						freereg(fp);
+					} else {
+						//for arguments of the function
+						if( node->lentry->magic) {
+							//for the reference parameter
+							int l = getreg(fp);
+							int m = getreg(fp);
+							fprintf(fp, "MOV R%d, BP\nSUB R%d, %d\n",l,l,k);
+							fprintf(fp, "MOV R%d, [R%d]\n",m,l);
+							fprintf(fp, "MOV R%d, [R%d]\n",i,m);
+							freereg(fp);
+							freereg(fp);
+						} else {
+							//for normal parameter
+							int l = getreg(fp);
+							fprintf(fp, "MOV R%d, BP\nSUB R%d, %d\n",l,l,k);
+							fprintf(fp, "MOV R%d, [R%d]\n",i,l);
+							freereg(fp);
+						}
+					
+					}
+				}
 				return i;
 			} else {
 				int i = getreg(fp);
@@ -64,7 +103,117 @@ int codegen(FILE * fp, struct Tnode *node) {
 		}
 		
 		else if(node->nodetype == FUNCTION) {
+			/*-------------------------------------------------------------------------------------------------
+			* As per the standard condition, all the current registers used by the callee is pushed in the stack
+			* and freed. Now the values in the arguments has to calculated and must be saved in the registers
+			* and register are allocated serially.
+			*-------------------------------------------------------------------------------------------------*/
+			int argCount = 0;
 			
+			struct Tnode * args = node->arglist;
+			struct ArgStruct *fargs, *dummy;
+			fargs = dummy = node->gentry->arglist;
+			
+			while(args != NULL) { argCount++; args = args->sibling; }
+			int currentRegCount = getregCount();
+			int i = currentRegCount;
+			
+			/* Creating the environment for function call */
+			
+			//saving the registers
+			while(i>=0) { 
+				fprintf(fp, "PUSH R%d\n",i);
+				//freereg();
+				i--;
+			}
+			setregCount(0);
+			
+			//pushing the arguments
+			i = -1;
+			args = node->arglist;
+			while(args != NULL) {
+				if(dummy->ptrType == 0) {
+					i=codegen(fp, args);
+					fprintf(fp, "PUSH R%d\n",i);
+					freereg(fp);
+				} else {
+					if(args->gentry != NULL) {
+						//for global variable
+						if(args->ptr1 == NULL) {
+							//normal variable
+							fprintf(fp, "PUSH %d\n",args->gentry->binding); 
+						} else {
+							//array element
+							i = codegen(fp, args->ptr1);
+							int j = getreg(fp);
+							fprintf(fp, "MOV R%d, %d\n",j,args->gentry->binding);
+							fprintf(fp, "ADD R%d, R%d\n",j,i);
+							fprintf(fp, "PUSH R%d\n",j);
+							freereg(fp);
+							freereg(fp);
+						}
+					} else {
+						//for local variable and arguments
+						int b = args->lentry->binding;
+						if(b>0) {
+							//for local variables
+							i = getreg(fp);
+							fprintf(fp, "MOV R%d, BP\n",i);
+							fprintf(fp, "ADD R%d, %d\n",i,b);
+							fprintf(fp, "PUSH [R%d]\n",i);
+							freereg(fp);
+						} else {
+							//for arguments to the functions
+							if(args->lentry->magic) {
+								//reference argument
+								i = getreg(fp);
+								int k = getreg(fp);
+								fprintf(fp, "MOV R%d, BP\n",i);
+								fprintf(fp, "SUB R%d, %d\n",i,b);
+								fprintf(fp, "MOV R%d, [R%d]\n",k,i);
+								fprintf(fp, "PUSH [R%d]\n",k);
+								freereg(fp);
+								freereg(fp);
+							} else {
+								//normal argument
+								i = getreg(fp);
+								fprintf(fp, "MOV R%d, BP\n",i);
+								fprintf(fp, "SUB R%d, %d\n",i,b);
+								fprintf(fp, "PUSH [R%d]\n",i);
+								freereg(fp);
+							}
+						}
+					}
+				}
+				dummy = dummy->next;
+				args = args->sibling;
+			}
+			
+			fprintf(fp, "PUSH R0\n");	//creating space for return value;
+			
+			/* function call */
+			fprintf(fp, "CALL %s\n", node->name);
+			
+			/* returned from function call */
+			setregCount(currentRegCount + 1);
+			int k = currentRegCount + 1;
+			
+			/*saving the return value to a register R0 */
+			fprintf(fp, "MOV R%d, [SP]\n", k);
+			
+			/* cleaning up the arguments pushed and return value */
+			i = argCount;
+			while(i>=0) {
+				fprintf(fp, "POP R0\n");
+			}
+			
+			i=0;
+			while(i<=currentRegCount) {
+				fprintf(fp, "POP R%d\n", i);
+			}
+			
+			/* return the register number in which the return value of the function has been stored */
+			return k; 
 			
 		}
 		else if(node->nodetype == PLUS) {
@@ -139,13 +288,50 @@ int codegen(FILE * fp, struct Tnode *node) {
 		else if(node->nodetype == ASG) {
 			//printf("SEG FAULT");
 			if(node->ptr1->ptr1 == NULL) {
-				//asignment to normal variable
-				int i = codegen(fp,node->ptr2);
-				fprintf(fp,"MOV [%d] R%d\n",node->ptr1->gentry->binding,i);
-				freereg(fp);
-				return -1;
+				if(node->ptr1->gentry != NULL) {
+					//asignment to global variable
+					int i = codegen(fp,node->ptr2);
+					fprintf(fp,"MOV [%d] R%d\n",node->ptr1->gentry->binding,i);
+					freereg(fp);
+					
+				} else {
+					int k = node->ptr1->lentry->binding;
+					if(k>0) {
+						//assignment to local variable
+							int i = codegen(fp,node->ptr2);
+							int l = getreg(fp);
+							fprintf(fp, "MOV R%d, BP\n",l);
+							fprintf(fp, "ADD R%d, %d\n",l,k);
+							fprintf(fp, "MOV [R%d], R%d\n",l,i);
+							freereg(fp);
+							freereg(fp);
+					} else {
+						//assignment to arguments
+						if(node->ptr1->lentry->magic) {
+							//assignment to reference parameter
+							int i = codegen(fp,node->ptr2);
+							int l = getreg(fp);
+							int m = getreg(fp);
+							fprintf(fp, "MOV R%d, BP\n",l);
+							fprintf(fp, "ADD R%d, %d\n",l,k);
+							fprintf(fp, "MOV [R%d], R%d\n",l,i);
+							freereg(fp);
+							freereg(fp);
+						
+						} else {
+							//assignment to normal parameter
+							int i = codegen(fp,node->ptr2);
+							int l = getreg(fp);
+							fprintf(fp, "MOV R%d, BP\n",l);
+							fprintf(fp, "ADD R%d, %d\n",l,k);
+							fprintf(fp, "MOV [R%d], R%d\n",l,i);
+							freereg(fp);
+							freereg(fp);
+						}
+					}
+				}
 			} else {
-				//asignment to array element
+				//asignment to array element(global)
 				int k = getreg(fp);
 				int j = codegen(fp,node->ptr1->ptr1);
 				int l = codegen(fp,node->ptr2);
@@ -155,21 +341,63 @@ int codegen(FILE * fp, struct Tnode *node) {
 				freereg(fp);
 				freereg(fp);
 				freereg(fp);
-				return -1;
 			}
+			
+			return -1;
 		}
 	
 		else if(node->nodetype == READ) {
 			if(node->ptr1->ptr1 == NULL) {
-				//asignment to normal variable
-				int i = getreg(fp);
-				fprintf(fp,"IN R%d\n",i);
-				fprintf(fp,"MOV [%d] R%d\n",node->ptr1->gentry->binding,i);
-				freereg(fp);
-				return -1;
+				if(node->ptr1->gentry != NULL) {
+					//reading a global variable
+					int i = getreg(fp);
+					fprintf(fp,"IN R%d\n",i);
+					fprintf(fp,"MOV [%d] R%d\n",node->ptr1->gentry->binding,i);
+					freereg(fp);
+					
+				} else {
+					int k = node->ptr1->lentry->binding;
+					if(k>0) {
+						//reading a local variable
+							int i = getreg(fp);
+							int l = getreg(fp);
+							fprintf(fp, "IN R%d\n",i);
+							fprintf(fp, "MOV R%d, BP\n",l);
+							fprintf(fp, "ADD R%d, %d\n",l,k);
+							fprintf(fp, "MOV [R%d], R%d\n",l,i);
+							freereg(fp);
+							freereg(fp);
+					} else {
+						//reading values to arguments
+						if(node->ptr1->lentry->magic) {
+							// to reference parameter
+							int i = getreg(fp);
+							int l = getreg(fp);
+							int m = getreg(fp);
+							fprintf(fp, "IN R%d\n",i);
+							fprintf(fp, "MOV R%d, BP\n",l);
+							fprintf(fp, "ADD R%d, %d\n",l,k);
+							fprintf(fp, "MOV [R%d], R%d\n",l,i);
+							freereg(fp);
+							freereg(fp);
+							freereg(fp);
+						
+						} else {
+							// to normal parameter
+							int i = getreg(fp);
+							int l = getreg(fp);
+							fprintf(fp, "IN R%d\n",i);
+							fprintf(fp, "MOV R%d, BP\n",l);
+							fprintf(fp, "ADD R%d, %d\n",l,k);
+							fprintf(fp, "MOV [R%d], R%d\n",l,i);
+							freereg(fp);
+							freereg(fp);
+						}
+					}
+				}
 				
 			} else {
-				//asignment to array element
+				//reading an array element
 				int k = getreg(fp);
 				int j = codegen(fp,node->ptr1->ptr1);
 				int i = getreg(fp);

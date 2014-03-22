@@ -20,6 +20,15 @@ BUG :: THIS LIMITS THE COUNT OF THE ARGUMENTS PASSED TO THE FUNCTION TO 8.
 NEED TO BE FIXED OR FIND A NEW WAY TO DO IT! 
 ----------------------------------------------------------------------*/
 int reg = 0;
+
+int getregCount() {
+	return reg;
+}
+
+void setregCount(int v) {
+	reg = v;
+}
+
 int getreg(FILE *fp) {
 	reg++;
 	if(reg >= 8) 
@@ -35,6 +44,7 @@ void freereg(FILE *fp){
 		fprintf(fp,"POP R%d\n",reg%8);
 		reg--;
 	}
+	else if(reg == 0) ;
 	else reg--;
 }
 
@@ -231,21 +241,64 @@ int type_check(int nodetype, struct Tnode *ptr1 ,struct Tnode *ptr2 ,struct Tnod
 }
 
 /*----------------------------------------------------------------------------------------------------
+Local Symbol Table
 linstall : creates local symbol table for a function
+lcheck : checks if a identifier with given name exits
+Llookup : returns the pointer to the entry in local symbol table
+getLocalVarCount : returns the count of local variables of the functions
 ----------------------------------------------------------------------------------------------------*/
-void linstall(char *name, int type) {
-	struct Lsymbol * p = (struct Lsymbol *)malloc(sizeof(struct Lsymbol));
-	p->name = name;
-	p->type = type;
-	p->magic = 0;
-	if( lsymtable == NULL) {
-		p->binding = 1;
-		lsymtable = lsymtableLast = p;
-	} else {
-		p->binding = lsymtableLast->binding + 1;
-		lsymtableLast->next = p;
-		lsymtableLast = p;
+int lcheck(char * n) {
+	struct Lsymbol * t = lsymtable;
+	while(t != NULL) {
+		if(!strcmp(n, t->name)) {
+			return 0;
+		}
+		t = t->next;
 	}
+	return 1;
+}
+void linstall(char *name, int type) {
+	if(lcheck(name)) {
+		struct Lsymbol * p = (struct Lsymbol *)malloc(sizeof(struct Lsymbol));
+		p->name = name;
+		p->type = type;
+		p->magic = 0;
+		if( lsymtable == NULL) {
+			p->binding = 1;
+			lsymtable = lsymtableLast = p;
+		} else {
+			p->binding = lsymtableLast->binding + 1;
+			lsymtableLast->next = p;
+			lsymtableLast = p;
+		}
+	} else {
+		printf("ERROR : line %d : Variable %s has been defined twice in same scope.\n",yyline,name);
+		exit(1);
+	}
+}
+
+struct Lsymbol * Llookup(char * n) {
+	struct Lsymbol * t = lsymtable;
+	while(t != NULL) {
+		if(!strcmp(n, t->name)) {
+			return t;
+		}
+		
+		t = t->next;
+	}
+	printf(" ERROR : line %d : identifier %s is not declared.\n",yyline,n);
+	exit(1);
+	return NULL;
+}
+
+int getLocalVarCount() {
+	int i = 0;
+	struct Lsymbol * t = lsymtable;
+	while(t != NULL) {
+		i++;
+		t = t->next;
+	}
+	return i;
 }
 
 /*-----------------------------------------------------------------------------------------------------
@@ -318,9 +371,14 @@ int argCompatibleToFunc(struct Gsymbol * f, struct Tnode * args) {
 		if(arglist->type != args->type) {
 			break;
 		}
+		if( (arglist->ptrType == 1 ) && ( args->nodetype != ID)) {
+			printf("ERROR : line %d : Reference Arguments to function %s must be an identifier.\n",yyline,f->name);
+			return 0;
+		}
 		arglist = arglist->next;
 		args = args->sibling;
 	}
+	
 	if(arglist != NULL && args !=NULL) {
 		printf("ERROR : line %d : Arguments to function %s mismatched.\n",yyline,f->name);
 		return 0;
@@ -338,7 +396,13 @@ argsToLocalVars : forcefully inserts the arguments of the function in local symb
 binding value, so that they can be easily be reference relative to BP 
 ------------------------------------------------------------------------------------------------------*/
 void argsToLocalVars(struct ArgStruct * args) {
-	int binding = -3;
+	int binding = -2;
+	struct ArgStruct * dummy = args;
+	while(dummy != NULL) {
+		binding--;
+		dummy = dummy->next;
+	}
+	
 	while(args != NULL) {
 		struct Lsymbol * l = (struct Lsymbol *)malloc(sizeof(struct Lsymbol));
 		l->name = args->name;
@@ -348,7 +412,7 @@ void argsToLocalVars(struct ArgStruct * args) {
 		
 		l->next = lsymtable;
 		lsymtable = l;		
-		binding--;
+		binding++;
 		args = args->next;
 	}
 }

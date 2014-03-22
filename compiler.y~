@@ -6,6 +6,7 @@
 	#include "codegen.h"
 	
 	extern FILE * yyin;
+	FILE * outfile;
 	
 	//Error Handling function
 	void yyerror(const char * str) { fprintf(stderr,"Syntax Error: %s\n",str); }
@@ -21,6 +22,7 @@
 		}
 		
 		FILE * fp = fopen(argv[1],"r");
+		outfile = fopen("program.sim", "w");
 		
 		if(!fp) {
 			printf("Error 404 : File not Found. Go and Search for it :p\n");
@@ -31,7 +33,10 @@
 		
 		initCompiler();
 		
+		/* creating the file context */
+		fprintf(outfile, "START\nMOV SP, 2048\nMOV BP, SP\nCALL MAIN\n");
 		yyparse();
+		fprintf(outfile, "EXIT:\nHALT\n");
 		
 		return 1;
 	}
@@ -136,26 +141,26 @@ Farglist:
 	;
 	
 /*-----------------------------------------------------------------------------------
-The callee of the function has to push the arguments before calling the function.
+The caller of the function has to push the arguments before calling the function.
 The schema which is being used here is that the last argument to the funtion will be
 pushed first and then so on. 
 
 So the state of stack before call of the function
 	
 SP -->	|--------------|
-	| Argument N   |
-	|--------------|
-	| Argument N-1 |
-	|--------------|
-	| Argument N-2 |
-	|--------------|
-	|	       |
-	|--------------|
-	| Argument 3   |
+	| Argument 1   |
 	|--------------|
 	| Argument 2   |
 	|--------------|
-	| Argument 1   |
+	| Argument 3   |
+	|--------------|
+	|	       |
+	|--------------|
+	| Argument N-2 |
+	|--------------|
+	| Argument N-1 |
+	|--------------|
+	| Argument N   |
 	|--------------|
 
 Therefore, it is convinient to first create the list of arguments last to first then pushing
@@ -166,8 +171,30 @@ Fdefinition :
 						{
 							if(func_typecheck($3,fargTable,INTEGER,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
+								//TODO: push the local variables in the stack
+								int k = getLocalVarCount();
+								
 								argsToLocalVars(f->arglist);
 								
+								int i = 0;
+								
+								//setting up the base pointer
+								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
+								
+								//pushing space for local vairables
+								fprintf(outfile, "MOV R0, 0\n");
+								for(i=0;i<k;i++)
+									fprintf(outfile,"PUSH R0\n");
+								
+								//codegeneration of functione body
+								codegen(outfile, $9);
+								
+								//resetting the SP and BP
+								fprintf(outfile, "MOV SP, BP\n");
+								fprintf(outfile, "POP BP\n");
+								
+								//return 
+								fprintf(outfile,"RET\n");	
 							}
 
 						}
@@ -176,18 +203,56 @@ Fdefinition :
 						{
 							if(func_typecheck($3,fargTable,BOOLEAN,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
+								
+								int k = getLocalVarCount();
+								
 								argsToLocalVars(f->arglist);
 								
+								int i = 0;
+								
+								//setting up the base pointer
+								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
+								
+								//pushing space for local vairables
+								fprintf(outfile, "MOV R0, 0\n");
+								for(i=0;i<k;i++)
+									fprintf(outfile,"PUSH R0\n");
+								
+								//codegeneration of functione body
+								codegen(outfile, $9);
+								
+								//resetting the SP and BP
+								fprintf(outfile, "MOV SP, BP\n");
+								fprintf(outfile, "POP BP\n");
+								
+								//return 
+								fprintf(outfile,"RET\n");				
 							}
 					
 						}
 	;
 	
 MainBlock :	INTEGER MAIN '(' ')' '{' ldeclaration fbody '}'	
-									{ //generate code for main function
-										
-								 
-									}
+						{ 
+							fprintf(outfile,"MAIN :\n");
+							//TODO: push the local variables in the stack
+							int k = getLocalVarCount();
+							int i = 0;
+					
+							//pushing space for local vairables
+							fprintf(outfile, "MOV R0, 0\n");
+							for(i=0;i<k;i++)
+								fprintf(outfile,"PUSH R0\n");
+					
+							//codegeneration of functione body
+							codegen(outfile, fbody);
+					
+							for(i=0;i<k;i++)
+								fprintf(outfile,"POP R0\n");
+							
+							//EXIT 
+							fprintf(outfile,"JMP EXIT\n");
+						}
 	;
 
 ldeclaration : DECL localdeclList ENDDECL
@@ -256,11 +321,11 @@ stat	:	ID ASG expr ';'			{
 this will create a list of arguments which have to pass to the function
 using sibling of Tnode to create the linked list of arguments to pass to the function
 
-The argument list will be created with last argument at the fist
+The argument list will be created with first argument at the fist
 e.g. if function is karl is called with thee arguments, karl(A,B,C).
 then the argument list will be
 	 ____      ____      ____
-	|_C_| --> |_B_| --> |_A_| --> null
+	|_A_| --> |_B_| --> |_C_| --> null
 	
 --------------------------------------------------------------------------------------------------------*/
 
@@ -268,8 +333,8 @@ arglist :	expr			{	$1->sibling = NULL;
 						$$ = $1;
 					}
 					
-	|	arglist ',' expr	{	$3->sibling = $1;
-						$$ = $3;
+	|	expr ',' arglist	{	$1->sibling = $3;
+						$$ = $1;
 					}
 	;
 
@@ -279,9 +344,18 @@ expr	:       NUM     	        {$$=TreeCreate(INTEGER,NUM,$1,NULL,NULL,NULL,NULL,
 	
 	|	__FALSE			{$$=TreeCreate(BOOLEAN,NUM,0,NULL,NULL,NULL,NULL,NULL);}
 
-	|	ID			{	struct Gsymbol * v = Glookup($1);
-						$$=TreeCreate(v->type,ID,($1[0]-'a'),$1,NULL,NULL,NULL,NULL);
-						$$->gentry = v;
+	|	ID			{	
+						struct Lsymbol * l = Llookup($1);
+						if( l != NULL) {
+							$$=TreeCreate(l->type,ID,($1[0]-'a'),$1,NULL,NULL,NULL,NULL);
+							$$->lentry = l;
+							$$->gentry = NULL;
+						} else {
+							struct Gsymbol * v = Glookup($1);
+							$$=TreeCreate(v->type,ID,($1[0]-'a'),$1,NULL,NULL,NULL,NULL);
+							$$->gentry = v;
+							$$->lentry = NULL;
+						}
 					}
 	|	ID '[' expr ']'		{	struct Gsymbol * v = Glookup($1);
 						$$=TreeCreate(v->type,ID,($1[0]-'a'),$1,NULL,$3,NULL,NULL); 
@@ -290,8 +364,10 @@ expr	:       NUM     	        {$$=TreeCreate(INTEGER,NUM,$1,NULL,NULL,NULL,NULL,
 					
 	|	ID '(' arglist ')'	{	struct Gsymbol *v = Glookup($1);
 						//the ArgList pointer is used to point to arguments
-						$$=TreeCreate(v->type,FUNCTION,-1,$1,$3,NULL,NULL,NULL);
-						$$->gentry = v;
+						if(argCompatibleToFunc(v, $3)) {
+							$$=TreeCreate(v->type,FUNCTION,-1,$1,$3,NULL,NULL,NULL);
+							$$->gentry = v;
+						}
 					}
 					
 	|	ID '('	')'		{	struct Gsymbol *v = Glookup($1);
