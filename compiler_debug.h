@@ -80,7 +80,6 @@ struct Lsymbol *lsymtable, *lsymtableLast ;
 int lvarType = 0;
 
 struct ArgStruct *fargTable, *fargTableLast, *fstart, *fend;
-char * fname;
 
 struct VarList *vstart, *vend ;
 
@@ -144,7 +143,6 @@ struct Gsymbol *Glookup(char *name) {
 	struct Gsymbol * p;
 	p = symtable;
 	while(p != NULL) {
-		printf("%s ",p->name);
 		if(!(strcmp(p->name,name)))
 			return p;
 		p = p->next;
@@ -252,7 +250,6 @@ getLocalVarCount : returns the count of local variables of the functions
 int lcheck(char * n) {
 	struct Lsymbol * t = lsymtable;
 	while(t != NULL) {
-		printf("%s ",t->name);
 		if(!strcmp(n, t->name)) {
 			return 0;
 		}
@@ -283,15 +280,14 @@ void linstall(char *name, int type) {
 struct Lsymbol * Llookup(char * n) {
 	struct Lsymbol * t = lsymtable;
 	while(t != NULL) {
-		printf("%s ",t->name);
 		if(!strcmp(n, t->name)) {
 			return t;
 		}
 		
 		t = t->next;
 	}
-	/*printf(" ERROR : line %d : identifier %s is not declared.\n",yyline,n);
-	exit(1); */
+	printf(" ERROR : line %d : identifier %s is not declared.\n",yyline,n);
+	exit(1);
 	return NULL;
 }
 
@@ -400,7 +396,6 @@ argsToLocalVars : forcefully inserts the arguments of the function in local symb
 binding value, so that they can be easily be reference relative to BP 
 ------------------------------------------------------------------------------------------------------*/
 void argsToLocalVars(struct ArgStruct * args) {
-	printf("Converting args to local vars");
 	int binding = -2;
 	struct ArgStruct * dummy = args;
 	while(dummy != NULL) {

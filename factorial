@@ -1,0 +1,24 @@
+decl
+	integer m;
+	integer factorial(integer k;);
+enddecl
+
+integer factorial(integer k;) {
+	decl
+	enddecl
+	begin
+		return (k+10);
+	end
+}
+
+integer main() {
+	decl
+		integer k;
+	enddecl
+	begin
+		m = 5;
+		k = 3;
+		write(k+2);
+		return 0;
+	end
+}
