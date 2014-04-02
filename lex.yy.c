@@ -881,7 +881,7 @@ YY_RULE_SETUP
 case 19:
 YY_RULE_SETUP
 #line 33 "compiler_debug.l"
-{printf(" ID");yylval.ch=strdup(yytext); return ID; }		//regex for both normal and array variable
+{printf(" ID`%s`",strdup(yytext));yylval.ch=strdup(yytext); return ID; }		//regex for both normal and array variable
 	YY_BREAK
 case 20:
 YY_RULE_SETUP

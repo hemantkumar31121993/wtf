@@ -1,24 +1,47 @@
 decl
 	integer m;
 	integer factorial(integer k;);
+	integer swap(integer &a,&b;);
 enddecl
 
 integer factorial(integer k;) {
 	decl
+		integer n;
+	enddecl
+	begin	
+		if (k==1) then
+			n=1;
+		endif;
+		if(k>1) then
+			n = k * factorial(k-1);
+		endif;
+		return n;
+	end
+}
+
+integer swap(integer &a,&b;) {
+	decl
 	enddecl
 	begin
-		return (k+10);
+		a = a + b;
+		b = a - b;
+		a = a - b;
+		return 0;
 	end
 }
 
 integer main() {
 	decl
-		integer k;
+		integer k,a,b;
 	enddecl
-	begin
-		m = 5;
-		k = 3;
-		write(k+2);
+	begin	
+		a = 7;
+		b = 17;
+		write(a);
+		write(b);
+		k = swap(a,b);
+		write(a);
+		write(b);
 		return 0;
 	end
 }

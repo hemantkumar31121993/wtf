@@ -43,10 +43,11 @@ int codegen(FILE * fp, struct Tnode *node) {
 		else if(node->nodetype == BODY) {
 			codegen(fp,node->ptr1);
 			int i = codegen(fp,node->ptr2), k = getreg(fp), n = getreg(fp);
-			fprintf(fp,"MOV BP R%d\nMOV R%d, 2\nSUB R%d, R%d\nMOV R%d, [R%d]\n",k,n,k,n,i,k);
+			fprintf(fp,"MOV R%d, BP\nMOV R%d, 2\nSUB R%d, R%d\nMOV [R%d], R%d\n",k,n,k,n,k,i);
 			freereg(fp);
 			freereg(fp);
 			freereg(fp);
+			return -1;
 		}
 		else if(node->nodetype == NUM) {
 			int i = getreg(fp);
@@ -161,11 +162,14 @@ int codegen(FILE * fp, struct Tnode *node) {
 							i = getreg(fp);
 							int k = getreg(fp);
 							int m = getreg(fp);
+							int n = getreg(fp);
 							fprintf(fp, "MOV R%d, BP\n",i);
 							fprintf(fp, "MOV R%d, %d\n",m,b);
 							fprintf(fp, "ADD R%d, R%d\n",i,m);
 							fprintf(fp, "MOV R%d, [R%d]\n",k,i);
-							fprintf(fp, "PUSH [R%d]\n",k);
+							fprintf(fp, "MOV R%d, [R%d]\n",n,k);
+							fprintf(fp, "PUSH R%d\n",n);
+							freereg(fp);
 							freereg(fp);
 							freereg(fp);
 							freereg(fp);
@@ -173,10 +177,13 @@ int codegen(FILE * fp, struct Tnode *node) {
 							//normal argument
 							i = getreg(fp);
 							int m = getreg(fp);
+							int n = getreg(fp);
 							fprintf(fp, "MOV R%d, BP\n",i);
 							fprintf(fp, "MOV R%d, %d\n",m,b);
 							fprintf(fp, "ADD R%d, R%d\n",i,m);
-							fprintf(fp, "PUSH [R%d]\n",i);
+							fprintf(fp, "MOV R%d, [R%d]\n",n,i);
+							fprintf(fp, "PUSH R%d\n",n);
+							freereg(fp);
 							freereg(fp);
 							freereg(fp);
 						}
@@ -195,18 +202,20 @@ int codegen(FILE * fp, struct Tnode *node) {
 			setregCount(currentRegCount + 1);
 			int k = currentRegCount + 1;
 			
-			/*saving the return value to a register R0 */
+			/*saving the return value to a register R'k' */
 			fprintf(fp, "MOV R%d, [SP]\n", k);
 			
 			/* cleaning up the arguments pushed and return value */
 			i = argCount;
 			while(i>=0) {
-				fprintf(fp, "POP R0\n");
+				fprintf(fp, "POP R%d\n",(k+1));
+				i--;
 			}
 			
 			i=0;
 			while(i<=currentRegCount) {
 				fprintf(fp, "POP R%d\n", i);
+				i++;
 			}
 			
 			/* return the register number in which the return value of the function has been stored */
@@ -351,7 +360,7 @@ int codegen(FILE * fp, struct Tnode *node) {
 				} else {
 					int k = node->ptr1->lentry->binding;
 					if(node->ptr1->lentry->magic) {
-						//assignment to reference parameter
+						//read to reference parameter
 						int i = codegen(fp,node->ptr2);
 						int l = getreg(fp);
 						int m = getreg(fp);
@@ -367,7 +376,7 @@ int codegen(FILE * fp, struct Tnode *node) {
 						freereg(fp);
 					
 					} else {
-						//assignment to normal parameter and local variables
+						//read to normal parameter and local variables
 						int i = codegen(fp,node->ptr2);
 						int l = getreg(fp);
 						int m = getreg(fp);

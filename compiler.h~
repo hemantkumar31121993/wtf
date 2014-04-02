@@ -10,7 +10,7 @@ extern int yyline;
 #define FUNCTION 7426
 
 /*----------------------------------------------------------------------
-Register Allocation : Register is allocated starting from R0 to R8.
+Register Allocation : Register is allocated starting from R0 to R7.
 getreg is used to reserve a register. freereg frees the last used register.
 If current count of reserved registers increses from 8 then, oldest register
 is pushed into the stack and when freed the oldest register is popped from
@@ -22,7 +22,7 @@ NEED TO BE FIXED OR FIND A NEW WAY TO DO IT!
 int reg = 0;
 
 int getregCount() {
-	return reg;
+	return reg - 1;
 }
 
 void setregCount(int v) {
@@ -258,8 +258,16 @@ int lcheck(char * n) {
 		}
 		t = t->next;
 	}
+	struct ArgStruct * k = fargTable;
+	while( k != NULL) {
+		if(!(strcmp(n,k->name))) {
+			return 0;
+		}
+		k = k->next;
+	}
 	return 1;
 }
+
 void linstall(char *name, int type) {
 	if(lcheck(name)) {
 		struct Lsymbol * p = (struct Lsymbol *)malloc(sizeof(struct Lsymbol));
@@ -357,7 +365,8 @@ int func_typecheck(char *name,struct ArgStruct *fargTable,int rettype,int type){
 	else{
 		struct ArgStruct *arglist=p->arglist;
 		while(arglist!=NULL && q!=NULL){
-			if(arglist->name==q->name && arglist->ptrType==q->ptrType && arglist->type==q->type){
+			printf("%s{%d}--%s{%d}",arglist->name,arglist->type,q->name,q->type);
+			if(!(strcmp(arglist->name,q->name)) && arglist->ptrType==q->ptrType && arglist->type==q->type){
 				arglist=arglist->next;
 				q=q->next;
 			}
@@ -395,6 +404,15 @@ int argCompatibleToFunc(struct Gsymbol * f, struct Tnode * args) {
 	return 1;
 }	
 
+int getArgCount() {
+	struct ArgStruct * dummy = fargTable;
+	int count = 0;
+	while(dummy != NULL) {
+		count++;
+		dummy = dummy->next;
+	}
+	return count;
+}
 /*-----------------------------------------------------------------------------------------------------
 argsToLocalVars : forcefully inserts the arguments of the function in local symbol table with negative 
 binding value, so that they can be easily be reference relative to BP 

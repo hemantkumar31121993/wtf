@@ -70,7 +70,7 @@
 
 
 %%
-program :	Gdeclaration Fdefinition MainBlock
+program :	Gdeclaration {printf("Declaration Complete");}Fdefinition MainBlock
 	;
 
 Gdeclaration :	DECL Gdeclist ENDDECL	{ 	struct Gsymbol * p = symtable;
@@ -135,7 +135,7 @@ FargDef :
 	;
 	
 Farglist: 	ID				{	finsertVar($1,0); }
-	|	'&' ID				{	finsertVar($2,0); }
+	|	'&' ID				{	finsertVar($2,1); }
 	|	ID ',' Farglist 		{	
 							finsertVar($1,0);
 						}
@@ -170,25 +170,27 @@ SP -->	|--------------|
 Therefore, it is convinient to first create the list of arguments last to first then pushing
 the first element first and then so on.
 ----------------------------------------------------------------------------------------*/
-Fdefinition : 
+Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = NULL; }
+	
 	|	Fdefinition INTEGER ID '(' FargDef ')' '{' ldeclaration fbody '}' 
 						{	
 							if(func_typecheck($3,fargTable,INTEGER,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
 								//TODO: push the local variables in the stack
-								int k = getLocalVarCount();
-								
-								//argsToLocalVars(f->arglist);
+								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
 								
+								fprintf(outfile, "%s:\n",$3);
 								//setting up the base pointer
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								fprintf(outfile, "MOV R0, 0\n");
-								for(i=0;i<k;i++)
-									fprintf(outfile,"PUSH R0\n");
+								if (k>0) {
+									fprintf(outfile, "MOV R0, 0\n");
+									for(i=0;i<k;i++)
+										fprintf(outfile,"PUSH R0\n");
+								}
 								
 								//codegeneration of functione body
 								codegen(outfile, $9);
@@ -199,8 +201,9 @@ Fdefinition :
 								
 								//return 
 								fprintf(outfile,"RET\n");	
-								lsymtable = lsymtableLast = NULL;
 							}
+							lsymtable = lsymtableLast = NULL;
+							fargTable = fargTableLast = NULL;
 
 						}
 	
@@ -208,20 +211,21 @@ Fdefinition :
 						{
 							if(func_typecheck($3,fargTable,BOOLEAN,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
-								
-								int k = getLocalVarCount();
-								
-								//argsToLocalVars(f->arglist);
+								//TODO: push the local variables in the stack
+								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
 								
+								fprintf(outfile, "%s:\n",$3);
 								//setting up the base pointer
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								fprintf(outfile, "MOV R0, 0\n");
-								for(i=0;i<k;i++)
-									fprintf(outfile,"PUSH R0\n");
+								if (k>0) {
+									fprintf(outfile, "MOV R0, 0\n");
+									for(i=0;i<k;i++)
+										fprintf(outfile,"PUSH R0\n");
+								}
 								
 								//codegeneration of functione body
 								codegen(outfile, $9);
@@ -231,8 +235,10 @@ Fdefinition :
 								fprintf(outfile, "POP BP\n");
 								
 								//return 
-								fprintf(outfile,"RET\n");				
+								fprintf(outfile,"RET\n");	
 							}
+							lsymtable = lsymtableLast = NULL;
+							fargTable = fargTableLast = NULL;
 					
 						}
 	;
@@ -240,17 +246,20 @@ Fdefinition :
 MainBlock :	INTEGER MAIN '(' ')' '{' ldeclaration fbody '}'	
 						{ 
 							fprintf(outfile,"MAIN :\n");
+							printf("I got a main");
 							//TODO: push the local variables in the stack
 							int k = getLocalVarCount();
 							int i = 0;
 					
 							//pushing space for local vairables
-							fprintf(outfile, "MOV R0, 0\n");
-							for(i=0;i<k;i++)
-								fprintf(outfile,"PUSH R0\n");
-					
+							if(k>0) {
+								fprintf(outfile, "MOV R0, 0\n");
+								for(i=0;i<k;i++)
+									fprintf(outfile,"PUSH R0\n");
+							}
+							
 							//codegeneration of functione body
-							codegen(outfile, $8);
+							codegen(outfile, $7);
 					
 							for(i=0;i<k;i++)
 								fprintf(outfile,"POP R0\n");
