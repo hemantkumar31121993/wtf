@@ -26,7 +26,7 @@ int getregCount() {
 }
 
 void setregCount(int v) {
-	reg = v;
+	reg = v + 1;
 }
 
 int getreg(FILE *fp) {

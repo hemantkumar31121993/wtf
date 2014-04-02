@@ -419,12 +419,12 @@ binding value, so that they can be easily be reference relative to BP
 ------------------------------------------------------------------------------------------------------*/
 void argsToLocalVars(struct ArgStruct * args) {
 	printf("Converting args to local vars");
-	int binding = -2;
+	int binding = -3;
 	struct ArgStruct * dummy = args;
-	while(dummy != NULL) {
+	/*while(dummy != NULL) {
 		binding--;
 		dummy = dummy->next;
-	}
+	}*/
 	
 	while(args != NULL) {
 		struct Lsymbol * l = (struct Lsymbol *)malloc(sizeof(struct Lsymbol));
@@ -435,7 +435,7 @@ void argsToLocalVars(struct ArgStruct * args) {
 		
 		l->next = lsymtable;
 		lsymtable = l;		
-		binding++;
+		binding--;
 		args = args->next;
 	}
 }

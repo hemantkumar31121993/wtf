@@ -51,7 +51,7 @@ int codegen(FILE * fp, struct Tnode *node) {
 		}
 		else if(node->nodetype == NUM) {
 			int i = getreg(fp);
-			fprintf(fp,"MOV R%d %d\n",i,node->value);
+			fprintf(fp,"MOV R%d, %d\n",i,node->value);
 			return i;
 		}
 	
@@ -60,7 +60,7 @@ int codegen(FILE * fp, struct Tnode *node) {
 			if(node->ptr1 == NULL) {
 				int i = getreg(fp), k;
 				if( node->gentry != NULL)	//for global variable
-					fprintf(fp,"MOV R%d [%d]\n",i,node->gentry->binding);
+					fprintf(fp,"MOV R%d, [%d]\n",i,node->gentry->binding);
 				else {
 					k = node->lentry->binding;
 						//for arguments of the function
@@ -94,9 +94,9 @@ int codegen(FILE * fp, struct Tnode *node) {
 				int i = getreg(fp);
 				int k = getreg(fp);
 				int j = codegen(fp,node->ptr1);
-				fprintf(fp,"MOV R%d %d\n",k,node->gentry->binding);
-				fprintf(fp,"ADD R%d R%d\n",k,j);
-				fprintf(fp,"MOV R%d [R%d]\n",i,k);
+				fprintf(fp,"MOV R%d, %d\n",k,node->gentry->binding);
+				fprintf(fp,"ADD R%d, R%d\n",k,j);
+				fprintf(fp,"MOV R%d, [R%d]\n",i,k);
 				freereg(fp);
 				freereg(fp);
 				return i;
@@ -162,14 +162,11 @@ int codegen(FILE * fp, struct Tnode *node) {
 							i = getreg(fp);
 							int k = getreg(fp);
 							int m = getreg(fp);
-							int n = getreg(fp);
 							fprintf(fp, "MOV R%d, BP\n",i);
 							fprintf(fp, "MOV R%d, %d\n",m,b);
 							fprintf(fp, "ADD R%d, R%d\n",i,m);
 							fprintf(fp, "MOV R%d, [R%d]\n",k,i);
-							fprintf(fp, "MOV R%d, [R%d]\n",n,k);
-							fprintf(fp, "PUSH R%d\n",n);
-							freereg(fp);
+							fprintf(fp, "PUSH R%d\n",k);
 							freereg(fp);
 							freereg(fp);
 							freereg(fp);
@@ -177,13 +174,10 @@ int codegen(FILE * fp, struct Tnode *node) {
 							//normal argument
 							i = getreg(fp);
 							int m = getreg(fp);
-							int n = getreg(fp);
 							fprintf(fp, "MOV R%d, BP\n",i);
 							fprintf(fp, "MOV R%d, %d\n",m,b);
 							fprintf(fp, "ADD R%d, R%d\n",i,m);
-							fprintf(fp, "MOV R%d, [R%d]\n",n,i);
-							fprintf(fp, "PUSH R%d\n",n);
-							freereg(fp);
+							fprintf(fp, "PUSH R%d\n",i);
 							freereg(fp);
 							freereg(fp);
 						}
@@ -297,7 +291,7 @@ int codegen(FILE * fp, struct Tnode *node) {
 				if(node->ptr1->gentry != NULL) {
 					//asignment to global variable
 					int i = codegen(fp,node->ptr2);
-					fprintf(fp,"MOV [%d] R%d\n",node->ptr1->gentry->binding,i);
+					fprintf(fp,"MOV [%d], R%d\n",node->ptr1->gentry->binding,i);
 					freereg(fp);
 					
 				} else {
@@ -337,9 +331,9 @@ int codegen(FILE * fp, struct Tnode *node) {
 				int k = getreg(fp);
 				int j = codegen(fp,node->ptr1->ptr1);
 				int l = codegen(fp,node->ptr2);
-				fprintf(fp,"MOV R%d %d\n",k,node->ptr1->gentry->binding);
-				fprintf(fp,"ADD R%d R%d\n",k,j);
-				fprintf(fp,"MOV [R%d] R%d\n",k,l);
+				fprintf(fp,"MOV R%d, %d\n",k,node->ptr1->gentry->binding);
+				fprintf(fp,"ADD R%d, R%d\n",k,j);
+				fprintf(fp,"MOV [R%d], R%d\n",k,l);
 				freereg(fp);
 				freereg(fp);
 				freereg(fp);
@@ -354,7 +348,7 @@ int codegen(FILE * fp, struct Tnode *node) {
 					//reading a global variable
 					int i = getreg(fp);
 					fprintf(fp,"IN R%d\n",i);
-					fprintf(fp,"MOV [%d] R%d\n",node->ptr1->gentry->binding,i);
+					fprintf(fp,"MOV [%d], R%d\n",node->ptr1->gentry->binding,i);
 					freereg(fp);
 					
 				} else {
@@ -396,9 +390,9 @@ int codegen(FILE * fp, struct Tnode *node) {
 				int j = codegen(fp,node->ptr1->ptr1);
 				int i = getreg(fp);
 				fprintf(fp,"IN R%d\n",i);
-				fprintf(fp,"MOV R%d %d\n",k,node->ptr1->gentry->binding);
-				fprintf(fp,"ADD R%d R%d\n",k,j);
-				fprintf(fp,"MOV [R%d] R%d\n",k,i);
+				fprintf(fp,"MOV R%d, %d\n",k,node->ptr1->gentry->binding);
+				fprintf(fp,"ADD R%d, R%d\n",k,j);
+				fprintf(fp,"MOV [R%d], R%d\n",k,i);
 				freereg(fp);
 				freereg(fp);
 				freereg(fp);
