@@ -11,8 +11,7 @@ integer factorial(integer k;) {
 	begin	
 		if (k==1) then
 			n=1;
-		endif;
-		if(k>1) then
+		else
 			n = k * factorial(k-1);
 		endif;
 		return n;
@@ -42,6 +41,8 @@ integer main() {
 		k = swap(a,b);
 		write(a);
 		write(b);
+		k=factorial(6);
+		write(k);
 		return 0;
 	end
 }

@@ -65,9 +65,10 @@
      END = 283,
      __EXIT = 284,
      THEN = 285,
-     ENDIF = 286,
-     DO = 287,
-     ENDWHILE = 288
+     ELSE = 286,
+     ENDIF = 287,
+     DO = 288,
+     ENDWHILE = 289
    };
 #endif
 /* Tokens.  */
@@ -99,9 +100,10 @@
 #define END 283
 #define __EXIT 284
 #define THEN 285
-#define ENDIF 286
-#define DO 287
-#define ENDWHILE 288
+#define ELSE 286
+#define ENDIF 287
+#define DO 288
+#define ENDWHILE 289
 
 
 
@@ -120,7 +122,7 @@ typedef union YYSTYPE
 
 
 /* Line 2068 of yacc.c  */
-#line 124 "y.tab.h"
+#line 126 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

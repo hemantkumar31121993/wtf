@@ -55,7 +55,7 @@
 %token <ival> NUM 
 %token <ch> ID 
 %token <node> PLUS PROD SUBT ASG GT LT EQ AND OR NOT READ WRITE IF WHILE
-%token MAIN RETURN INTEGER BOOLEAN __TRUE __FALSE DECL ENDDECL __BEGIN END __EXIT THEN ENDIF DO ENDWHILE
+%token MAIN RETURN INTEGER BOOLEAN __TRUE __FALSE DECL ENDDECL __BEGIN END __EXIT THEN ELSE ENDIF DO ENDWHILE
 
 %right ASG
 %nonassoc OR
@@ -346,6 +346,7 @@ stat	:	ID ASG expr ';'			{
 	
 	|	WRITE '(' expr ')' ';'			{$$=TreeCreate(VOID,WRITE,-1,NULL,NULL,$3,NULL,NULL);}
 	|	IF expr THEN slist ENDIF ';'		{$$=TreeCreate(VOID,IF,-1,NULL,NULL,$2,$4,NULL);}
+	|	IF expr THEN slist ELSE slist ENDIF ';'		{$$=TreeCreate(VOID,IF,-1,NULL,NULL,$2,$4,$6);}
 	|	WHILE expr DO slist ENDWHILE ';' 	{$$=TreeCreate(VOID,WHILE,-1,NULL,NULL,$2,$4,NULL);}
 	;
 

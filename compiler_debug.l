@@ -11,6 +11,7 @@
 "write"		{printf(" WRITE"); return WRITE; }
 "if"		{printf(" IF"); return IF; }
 "then"		{printf(" THEN");return THEN; }
+"else"		{printf(" ELSE");return ELSE; }
 "endif"		{printf(" ENDIF");return ENDIF;}
 "while"		{printf(" WHILE");return WHILE; }
 "do" 		{printf(" DO");return DO;}

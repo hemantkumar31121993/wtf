@@ -408,15 +408,28 @@ int codegen(FILE * fp, struct Tnode *node) {
 		}
 	
 		else if(node->nodetype == IF) {
-			int l = getlabel();
 			int i = codegen(fp,node->ptr1);
-			fprintf(fp,"JZ R%d, LABEL%d\n",i,l);
-			freereg(fp);
-			codegen(fp,node->ptr2);
-			fprintf(fp,"LABEL%d:",l);
-			return -1;
+			
+			if(node->ptr3 == NULL){
+				int l = getlabel();
+				fprintf(fp,"JZ R%d, LABEL%d\n",i,l);
+				freereg(fp);
+				codegen(fp,node->ptr2);
+				fprintf(fp,"LABEL%d:",l);
+				return -1;
+			}
+			else{
+				int l=getlabel();
+				int m=getlabel();
+				fprintf(fp,"JZ R%d, LABEL%d\n",i,l);
+				freereg(fp);
+				codegen(fp,node->ptr2);
+				fprintf(fp,"JMP LABEL%d\n",m);
+				fprintf(fp,"LABEL%d: ",l);
+				codegen(fp,node->ptr3);
+				fprintf(fp,"LABEL%d: ",m);	
+			}
 		}
-	
 		else if(node->nodetype == WHILE) {
 			int l = getlabel();
 			int m = getlabel();
