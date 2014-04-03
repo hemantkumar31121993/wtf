@@ -200,11 +200,12 @@ int codegen(FILE * fp, struct Tnode *node) {
 			fprintf(fp, "MOV R%d, [SP]\n", k);
 			
 			/* cleaning up the arguments pushed and return value */
-			i = argCount;
+			/*i = argCount;
 			while(i>=0) {
 				fprintf(fp, "POP R%d\n",(k+1));
 				i--;
-			}
+			} --OBSELETE*/
+			fprintf(fp, "MOV R%d, SP\nMOV R%d, %d\nSUB R%d, R%d\nMOV SP, R%d\n", (k+1),(k+2),(argCount + 1),(k+1),(k+2),(k+1));
 			
 			i=0;
 			while(i<=currentRegCount) {

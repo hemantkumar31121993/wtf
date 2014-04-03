@@ -176,7 +176,7 @@ Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = 
 						{	
 							if(func_typecheck($3,fargTable,INTEGER,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
-								//TODO: push the local variables in the stack
+								
 								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
@@ -186,11 +186,13 @@ Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = 
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								if (k>0) {
+								/*if (k>0) {
 									fprintf(outfile, "MOV R0, 0\n");
 									for(i=0;i<k;i++)
 										fprintf(outfile,"PUSH R0\n");
-								}
+								} --OBSELETE*/
+								if(k>0)
+									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 								
 								//codegeneration of functione body
 								codegen(outfile, $9);
@@ -211,7 +213,7 @@ Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = 
 						{
 							if(func_typecheck($3,fargTable,BOOLEAN,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
-								//TODO: push the local variables in the stack
+								
 								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
@@ -221,11 +223,14 @@ Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = 
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								if (k>0) {
+								/*if (k>0) {
 									fprintf(outfile, "MOV R0, 0\n");
 									for(i=0;i<k;i++)
 										fprintf(outfile,"PUSH R0\n");
-								}
+								} --OBSELETE */
+								
+								if(k>0)
+									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 								
 								//codegeneration of functione body
 								codegen(outfile, $9);
@@ -252,17 +257,19 @@ MainBlock :	INTEGER MAIN '(' ')' '{' ldeclaration fbody '}'
 							int i = 0;
 					
 							//pushing space for local vairables
-							if(k>0) {
+							/*if(k>0) {
 								fprintf(outfile, "MOV R0, 0\n");
 								for(i=0;i<k;i++)
 									fprintf(outfile,"PUSH R0\n");
-							}
+							} --OBSELETE*/
+							if(k>0)
+								fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 							
 							//codegeneration of functione body
 							codegen(outfile, $7);
 					
-							for(i=0;i<k;i++)
-								fprintf(outfile,"POP R0\n");
+							if(k>0)
+								fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nSUB R0, R1\nMOV SP, R0\n",k);
 							
 							//EXIT 
 							fprintf(outfile,"JMP EXIT\n");

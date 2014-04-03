@@ -559,11 +559,11 @@ static const yytype_uint16 yyrline[] =
 {
        0,    73,    73,    73,    76,    87,    88,    98,   110,   111,
      112,   113,   114,   115,   118,   119,   127,   137,   138,   139,
-     142,   173,   175,   210,   246,   273,   277,   278,   278,   280,
-     280,   283,   284,   287,   290,   293,   294,   297,   315,   322,
-     340,   347,   348,   349,   350,   366,   370,   375,   377,   379,
-     381,   396,   401,   409,   414,   415,   416,   417,   418,   419,
-     420,   421,   422,   423
+     142,   173,   175,   212,   251,   280,   284,   285,   285,   287,
+     287,   290,   291,   294,   297,   300,   301,   304,   322,   329,
+     347,   354,   355,   356,   357,   373,   377,   382,   384,   386,
+     388,   403,   408,   416,   421,   422,   423,   424,   425,   426,
+     427,   428,   429,   430
 };
 #endif
 
@@ -1784,7 +1784,7 @@ yyreduce:
     {	
 							if(func_typecheck((yyvsp[(3) - (10)].ch),fargTable,INTEGER,(yyvsp[(9) - (10)].node)->ptr2->type)){
 								struct Gsymbol * f = Glookup((yyvsp[(3) - (10)].ch));
-								//TODO: push the local variables in the stack
+								
 								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
@@ -1794,11 +1794,13 @@ yyreduce:
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								if (k>0) {
+								/*if (k>0) {
 									fprintf(outfile, "MOV R0, 0\n");
 									for(i=0;i<k;i++)
 										fprintf(outfile,"PUSH R0\n");
-								}
+								} --OBSELETE*/
+								if(k>0)
+									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 								
 								//codegeneration of functione body
 								codegen(outfile, (yyvsp[(9) - (10)].node));
@@ -1819,11 +1821,11 @@ yyreduce:
   case 23:
 
 /* Line 1806 of yacc.c  */
-#line 211 "compiler_debug.y"
+#line 213 "compiler_debug.y"
     {
 							if(func_typecheck((yyvsp[(3) - (10)].ch),fargTable,BOOLEAN,(yyvsp[(9) - (10)].node)->ptr2->type)){
 								struct Gsymbol * f = Glookup((yyvsp[(3) - (10)].ch));
-								//TODO: push the local variables in the stack
+								
 								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
@@ -1833,11 +1835,14 @@ yyreduce:
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								if (k>0) {
+								/*if (k>0) {
 									fprintf(outfile, "MOV R0, 0\n");
 									for(i=0;i<k;i++)
 										fprintf(outfile,"PUSH R0\n");
-								}
+								} --OBSELETE */
+								
+								if(k>0)
+									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 								
 								//codegeneration of functione body
 								codegen(outfile, (yyvsp[(9) - (10)].node));
@@ -1858,7 +1863,7 @@ yyreduce:
   case 24:
 
 /* Line 1806 of yacc.c  */
-#line 247 "compiler_debug.y"
+#line 252 "compiler_debug.y"
     { 
 							fprintf(outfile,"MAIN :\n");
 							printf("I got a main");
@@ -1867,17 +1872,19 @@ yyreduce:
 							int i = 0;
 					
 							//pushing space for local vairables
-							if(k>0) {
+							/*if(k>0) {
 								fprintf(outfile, "MOV R0, 0\n");
 								for(i=0;i<k;i++)
 									fprintf(outfile,"PUSH R0\n");
-							}
+							} --OBSELETE*/
+							if(k>0)
+								fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 							
 							//codegeneration of functione body
 							codegen(outfile, (yyvsp[(7) - (8)].node));
 					
-							for(i=0;i<k;i++)
-								fprintf(outfile,"POP R0\n");
+							if(k>0)
+								fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nSUB R0, R1\nMOV SP, R0\n",k);
 							
 							//EXIT 
 							fprintf(outfile,"JMP EXIT\n");
@@ -1887,91 +1894,91 @@ yyreduce:
   case 25:
 
 /* Line 1806 of yacc.c  */
-#line 273 "compiler_debug.y"
+#line 280 "compiler_debug.y"
     { argsToLocalVars(fargTable); }
     break;
 
   case 26:
 
 /* Line 1806 of yacc.c  */
-#line 277 "compiler_debug.y"
+#line 284 "compiler_debug.y"
     {lvarType = 0; }
     break;
 
   case 27:
 
 /* Line 1806 of yacc.c  */
-#line 278 "compiler_debug.y"
+#line 285 "compiler_debug.y"
     {lvarType = INTEGER;}
     break;
 
   case 28:
 
 /* Line 1806 of yacc.c  */
-#line 278 "compiler_debug.y"
+#line 285 "compiler_debug.y"
     {}
     break;
 
   case 29:
 
 /* Line 1806 of yacc.c  */
-#line 280 "compiler_debug.y"
+#line 287 "compiler_debug.y"
     {lvarType = BOOLEAN;}
     break;
 
   case 30:
 
 /* Line 1806 of yacc.c  */
-#line 280 "compiler_debug.y"
+#line 287 "compiler_debug.y"
     {}
     break;
 
   case 31:
 
 /* Line 1806 of yacc.c  */
-#line 283 "compiler_debug.y"
+#line 290 "compiler_debug.y"
     { linstall((yyvsp[(1) - (1)].ch), lvarType); }
     break;
 
   case 32:
 
 /* Line 1806 of yacc.c  */
-#line 284 "compiler_debug.y"
+#line 291 "compiler_debug.y"
     { linstall((yyvsp[(3) - (3)].ch), lvarType); }
     break;
 
   case 33:
 
 /* Line 1806 of yacc.c  */
-#line 287 "compiler_debug.y"
+#line 294 "compiler_debug.y"
     {(yyval.node)=(yyvsp[(2) - (3)].node);}
     break;
 
   case 34:
 
 /* Line 1806 of yacc.c  */
-#line 290 "compiler_debug.y"
+#line 297 "compiler_debug.y"
     {(yyval.node)=TreeCreate(VOID,BODY,-1,NULL,NULL,(yyvsp[(1) - (4)].node),(yyvsp[(3) - (4)].node),NULL);}
     break;
 
   case 35:
 
 /* Line 1806 of yacc.c  */
-#line 293 "compiler_debug.y"
+#line 300 "compiler_debug.y"
     {(yyval.node)=TreeCreate(VOID,SLIST,-1,NULL,NULL,NULL,NULL,NULL);}
     break;
 
   case 36:
 
 /* Line 1806 of yacc.c  */
-#line 294 "compiler_debug.y"
+#line 301 "compiler_debug.y"
     {(yyval.node)=TreeCreate(VOID,SLIST,-1,NULL,NULL,(yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node),NULL);}
     break;
 
   case 37:
 
 /* Line 1806 of yacc.c  */
-#line 297 "compiler_debug.y"
+#line 304 "compiler_debug.y"
     {	
 							struct Lsymbol * l = Llookup((yyvsp[(1) - (4)].ch));
 							if( l != NULL) {
@@ -1994,7 +2001,7 @@ yyreduce:
   case 38:
 
 /* Line 1806 of yacc.c  */
-#line 315 "compiler_debug.y"
+#line 322 "compiler_debug.y"
     {
 							struct Gsymbol * v = Glookup((yyvsp[(1) - (7)].ch));
 							struct Tnode *nid = TreeCreate(INTEGER,ID,-1,(yyvsp[(1) - (7)].ch),NULL,(yyvsp[(3) - (7)].node),NULL,NULL);
@@ -2006,7 +2013,7 @@ yyreduce:
   case 39:
 
 /* Line 1806 of yacc.c  */
-#line 322 "compiler_debug.y"
+#line 329 "compiler_debug.y"
     {	
 							struct Lsymbol * l = Llookup((yyvsp[(3) - (5)].ch));
 							if( l != NULL) {
@@ -2029,7 +2036,7 @@ yyreduce:
   case 40:
 
 /* Line 1806 of yacc.c  */
-#line 340 "compiler_debug.y"
+#line 347 "compiler_debug.y"
     {	
 							struct Gsymbol * v = Glookup((yyvsp[(3) - (8)].ch));
 							struct Tnode *nid = TreeCreate(INTEGER,ID,-1,(yyvsp[(3) - (8)].ch),NULL,(yyvsp[(5) - (8)].node),NULL,NULL);
@@ -2041,35 +2048,35 @@ yyreduce:
   case 41:
 
 /* Line 1806 of yacc.c  */
-#line 347 "compiler_debug.y"
+#line 354 "compiler_debug.y"
     {(yyval.node)=TreeCreate(VOID,WRITE,-1,NULL,NULL,(yyvsp[(3) - (5)].node),NULL,NULL);}
     break;
 
   case 42:
 
 /* Line 1806 of yacc.c  */
-#line 348 "compiler_debug.y"
+#line 355 "compiler_debug.y"
     {(yyval.node)=TreeCreate(VOID,IF,-1,NULL,NULL,(yyvsp[(2) - (6)].node),(yyvsp[(4) - (6)].node),NULL);}
     break;
 
   case 43:
 
 /* Line 1806 of yacc.c  */
-#line 349 "compiler_debug.y"
+#line 356 "compiler_debug.y"
     {(yyval.node)=TreeCreate(VOID,IF,-1,NULL,NULL,(yyvsp[(2) - (8)].node),(yyvsp[(4) - (8)].node),(yyvsp[(6) - (8)].node));}
     break;
 
   case 44:
 
 /* Line 1806 of yacc.c  */
-#line 350 "compiler_debug.y"
+#line 357 "compiler_debug.y"
     {(yyval.node)=TreeCreate(VOID,WHILE,-1,NULL,NULL,(yyvsp[(2) - (6)].node),(yyvsp[(4) - (6)].node),NULL);}
     break;
 
   case 45:
 
 /* Line 1806 of yacc.c  */
-#line 366 "compiler_debug.y"
+#line 373 "compiler_debug.y"
     {	(yyvsp[(1) - (1)].node)->sibling = NULL; 
 						(yyval.node) = (yyvsp[(1) - (1)].node);
 					}
@@ -2078,7 +2085,7 @@ yyreduce:
   case 46:
 
 /* Line 1806 of yacc.c  */
-#line 370 "compiler_debug.y"
+#line 377 "compiler_debug.y"
     {	(yyvsp[(1) - (3)].node)->sibling = (yyvsp[(3) - (3)].node);
 						(yyval.node) = (yyvsp[(1) - (3)].node);
 					}
@@ -2087,28 +2094,28 @@ yyreduce:
   case 47:
 
 /* Line 1806 of yacc.c  */
-#line 375 "compiler_debug.y"
+#line 382 "compiler_debug.y"
     {(yyval.node)=TreeCreate(INTEGER,NUM,(yyvsp[(1) - (1)].ival),NULL,NULL,NULL,NULL,NULL);}
     break;
 
   case 48:
 
 /* Line 1806 of yacc.c  */
-#line 377 "compiler_debug.y"
+#line 384 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,NUM,1,NULL,NULL,NULL,NULL,NULL);}
     break;
 
   case 49:
 
 /* Line 1806 of yacc.c  */
-#line 379 "compiler_debug.y"
+#line 386 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,NUM,0,NULL,NULL,NULL,NULL,NULL);}
     break;
 
   case 50:
 
 /* Line 1806 of yacc.c  */
-#line 381 "compiler_debug.y"
+#line 388 "compiler_debug.y"
     {	
 						struct Lsymbol * l = Llookup((yyvsp[(1) - (1)].ch));
 						if( l != NULL) {
@@ -2129,7 +2136,7 @@ yyreduce:
   case 51:
 
 /* Line 1806 of yacc.c  */
-#line 396 "compiler_debug.y"
+#line 403 "compiler_debug.y"
     {	struct Gsymbol * v = Glookup((yyvsp[(1) - (4)].ch));
 						(yyval.node)=TreeCreate(v->type,ID,((yyvsp[(1) - (4)].ch)[0]-'a'),(yyvsp[(1) - (4)].ch),NULL,(yyvsp[(3) - (4)].node),NULL,NULL); 
 						(yyval.node)->gentry = v;
@@ -2139,7 +2146,7 @@ yyreduce:
   case 52:
 
 /* Line 1806 of yacc.c  */
-#line 401 "compiler_debug.y"
+#line 408 "compiler_debug.y"
     {	struct Gsymbol *v = Glookup((yyvsp[(1) - (4)].ch));
 						//the ArgList pointer is used to point to arguments
 						if(argCompatibleToFunc(v, (yyvsp[(3) - (4)].node))) {
@@ -2152,7 +2159,7 @@ yyreduce:
   case 53:
 
 /* Line 1806 of yacc.c  */
-#line 409 "compiler_debug.y"
+#line 416 "compiler_debug.y"
     {	struct Gsymbol *v = Glookup((yyvsp[(1) - (3)].ch));
 						(yyval.node)=TreeCreate(v->type,FUNCTION,-1,(yyvsp[(1) - (3)].ch),NULL,NULL,NULL,NULL);
 						(yyval.node)->gentry = v;
@@ -2162,77 +2169,77 @@ yyreduce:
   case 54:
 
 /* Line 1806 of yacc.c  */
-#line 414 "compiler_debug.y"
+#line 421 "compiler_debug.y"
     {(yyval.node)=(yyvsp[(2) - (3)].node);}
     break;
 
   case 55:
 
 /* Line 1806 of yacc.c  */
-#line 415 "compiler_debug.y"
+#line 422 "compiler_debug.y"
     {(yyval.node)=TreeCreate(INTEGER,PLUS,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 56:
 
 /* Line 1806 of yacc.c  */
-#line 416 "compiler_debug.y"
+#line 423 "compiler_debug.y"
     {(yyval.node)=TreeCreate(INTEGER,SUBT,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 57:
 
 /* Line 1806 of yacc.c  */
-#line 417 "compiler_debug.y"
+#line 424 "compiler_debug.y"
     {(yyval.node)=TreeCreate(INTEGER,PROD,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 58:
 
 /* Line 1806 of yacc.c  */
-#line 418 "compiler_debug.y"
+#line 425 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,GT,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 59:
 
 /* Line 1806 of yacc.c  */
-#line 419 "compiler_debug.y"
+#line 426 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,LT,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 60:
 
 /* Line 1806 of yacc.c  */
-#line 420 "compiler_debug.y"
+#line 427 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,EQ,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 61:
 
 /* Line 1806 of yacc.c  */
-#line 421 "compiler_debug.y"
+#line 428 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,AND,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 62:
 
 /* Line 1806 of yacc.c  */
-#line 422 "compiler_debug.y"
+#line 429 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,OR,-1,NULL,NULL,(yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NULL);}
     break;
 
   case 63:
 
 /* Line 1806 of yacc.c  */
-#line 423 "compiler_debug.y"
+#line 430 "compiler_debug.y"
     {(yyval.node)=TreeCreate(BOOLEAN,NOT,-1,NULL,NULL,(yyvsp[(1) - (2)].node),NULL,NULL);}
     break;
 
 
 
 /* Line 1806 of yacc.c  */
-#line 2236 "y.tab.c"
+#line 2243 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2463,7 +2470,7 @@ yyreturn:
 
 
 /* Line 2067 of yacc.c  */
-#line 425 "compiler_debug.y"
+#line 432 "compiler_debug.y"
 
 
 
