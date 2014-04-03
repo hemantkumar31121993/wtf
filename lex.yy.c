@@ -893,7 +893,7 @@ YY_RULE_SETUP
 case 21:
 YY_RULE_SETUP
 #line 35 "compiler_debug.l"
-{return *yytext; }
+{printf(" %s",yytext); return *yytext; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
@@ -964,7 +964,7 @@ case 35:
 /* rule 35 can match eol */
 YY_RULE_SETUP
 #line 50 "compiler_debug.l"
-{yyline++;}
+{printf("\n"); yyline++;}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP

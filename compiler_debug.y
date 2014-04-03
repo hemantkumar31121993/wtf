@@ -78,10 +78,10 @@ Gdeclaration :	DECL Gdeclist ENDDECL	{ 	struct Gsymbol * p = symtable;
 						if(p ==NULL){printf("Pnull ");}
 						while(p != NULL) {
 							printf("%s,%d,%d,%d--> ",p->name,p->size,p->binding,p->type);
-							printf("Error");
 							p = p->next;
 							
 						}
+						printf("\n");
 					}
 	;
 Gdeclist :	

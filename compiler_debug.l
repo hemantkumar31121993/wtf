@@ -32,7 +32,7 @@
 "&"		{printf( " &"); return *yytext;}
 
 [a-z]+		{printf(" ID`%s`",strdup(yytext));yylval.ch=strdup(yytext); return ID; }		//regex for both normal and array variable
-[\[\]\{\}]		{return *yytext; }
+[\[\]\{\}]	{printf(" %s",yytext); return *yytext; }
 
 "+"		{printf(" PLUS");return PLUS;}
 "-"		{printf(" MINUS");return SUBT;}
@@ -47,5 +47,5 @@
 "@f"		{printf(" FALSE");return __FALSE;}
 ";"		{printf(" DELIM");return *yytext;}
 ","		{printf(" ,");return *yytext; }
-[\n]		{yyline++;}
+[\n]		{printf("\n"); yyline++;}
 [ \t]		;

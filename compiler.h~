@@ -144,7 +144,6 @@ struct Gsymbol *Glookup(char *name) {
 	struct Gsymbol * p;
 	p = symtable;
 	while(p != NULL) {
-		printf("%s ",p->name);
 		if(!(strcmp(p->name,name)))
 			return p;
 		p = p->next;
@@ -252,7 +251,6 @@ getLocalVarCount : returns the count of local variables of the functions
 int lcheck(char * n) {
 	struct Lsymbol * t = lsymtable;
 	while(t != NULL) {
-		printf("%s ",t->name);
 		if(!strcmp(n, t->name)) {
 			return 0;
 		}
@@ -291,7 +289,6 @@ void linstall(char *name, int type) {
 struct Lsymbol * Llookup(char * n) {
 	struct Lsymbol * t = lsymtable;
 	while(t != NULL) {
-		printf("%s ",t->name);
 		if(!strcmp(n, t->name)) {
 			return t;
 		}
@@ -365,7 +362,6 @@ int func_typecheck(char *name,struct ArgStruct *fargTable,int rettype,int type){
 	else{
 		struct ArgStruct *arglist=p->arglist;
 		while(arglist!=NULL && q!=NULL){
-			printf("%s{%d}--%s{%d}",arglist->name,arglist->type,q->name,q->type);
 			if(!(strcmp(arglist->name,q->name)) && arglist->ptrType==q->ptrType && arglist->type==q->type){
 				arglist=arglist->next;
 				q=q->next;
@@ -418,13 +414,10 @@ argsToLocalVars : forcefully inserts the arguments of the function in local symb
 binding value, so that they can be easily be reference relative to BP 
 ------------------------------------------------------------------------------------------------------*/
 void argsToLocalVars(struct ArgStruct * args) {
-	printf("Converting args to local vars");
-	int binding = -2;
+	//printf("Converting args to local vars");
+	int binding = -3;
 	struct ArgStruct * dummy = args;
-	while(dummy != NULL) {
-		binding--;
-		dummy = dummy->next;
-	}
+
 	
 	while(args != NULL) {
 		struct Lsymbol * l = (struct Lsymbol *)malloc(sizeof(struct Lsymbol));
@@ -435,7 +428,7 @@ void argsToLocalVars(struct ArgStruct * args) {
 		
 		l->next = lsymtable;
 		lsymtable = l;		
-		binding++;
+		binding--;
 		args = args->next;
 	}
 }

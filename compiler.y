@@ -34,7 +34,7 @@
 		initCompiler();
 		
 		/* creating the file context */
-		fprintf(outfile, "START\nMOV SP, 2048\nMOV BP, SP\nCALL MAIN\n");
+		fprintf(outfile, "START\nMOV SP, 2048\nMOV BP, SP\nJMP MAIN\n");
 		yyparse();
 		fprintf(outfile, "EXIT:\nHALT\n");
 		
@@ -55,7 +55,7 @@
 %token <ival> NUM 
 %token <ch> ID 
 %token <node> PLUS PROD SUBT ASG GT LT EQ AND OR NOT READ WRITE IF WHILE
-%token MAIN RETURN INTEGER BOOLEAN __TRUE __FALSE DECL ENDDECL __BEGIN END __EXIT THEN ENDIF DO ENDWHILE
+%token MAIN RETURN INTEGER BOOLEAN __TRUE __FALSE DECL ENDDECL __BEGIN END __EXIT THEN ELSE ENDIF DO ENDWHILE
 
 %right ASG
 %nonassoc OR
@@ -74,10 +74,13 @@ program :	Gdeclaration Fdefinition MainBlock
 	;
 
 Gdeclaration :	DECL Gdeclist ENDDECL	{ 	/*struct Gsymbol * p = symtable;
+						printf("\nSymbol Table: \n");
 						if(p ==NULL){printf("Pnull ");}
 						while(p != NULL) {
 							printf("%s,%d,%d,%d--> ",p->name,p->size,p->binding,p->type);
+							printf("Error");
 							p = p->next;
+							
 						} */
 					}
 	;
@@ -131,7 +134,8 @@ FargDef :
 						}
 	;
 	
-Farglist:
+Farglist: 	ID				{	finsertVar($1,0); }
+	|	'&' ID				{	finsertVar($2,1); }
 	|	ID ',' Farglist 		{	
 							finsertVar($1,0);
 						}
@@ -166,25 +170,23 @@ SP -->	|--------------|
 Therefore, it is convinient to first create the list of arguments last to first then pushing
 the first element first and then so on.
 ----------------------------------------------------------------------------------------*/
-Fdefinition : 
+Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = NULL; }
+	
 	|	Fdefinition INTEGER ID '(' FargDef ')' '{' ldeclaration fbody '}' 
-						{
+						{	
 							if(func_typecheck($3,fargTable,INTEGER,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
-								//TODO: push the local variables in the stack
-								int k = getLocalVarCount();
 								
-								argsToLocalVars(f->arglist);
+								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
 								
+								fprintf(outfile, "%s:\n",$3);
 								//setting up the base pointer
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
-								
-								//pushing space for local vairables
-								fprintf(outfile, "MOV R0, 0\n");
-								for(i=0;i<k;i++)
-									fprintf(outfile,"PUSH R0\n");
+
+								if(k>0)
+									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 								
 								//codegeneration of functione body
 								codegen(outfile, $9);
@@ -196,6 +198,8 @@ Fdefinition :
 								//return 
 								fprintf(outfile,"RET\n");	
 							}
+							lsymtable = lsymtableLast = NULL;
+							fargTable = fargTableLast = NULL;
 
 						}
 	
@@ -204,19 +208,16 @@ Fdefinition :
 							if(func_typecheck($3,fargTable,BOOLEAN,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
 								
-								int k = getLocalVarCount();
-								
-								argsToLocalVars(f->arglist);
+								int k = getLocalVarCount() - getArgCount();
 								
 								int i = 0;
 								
+								fprintf(outfile, "%s:\n",$3);
 								//setting up the base pointer
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
-								//pushing space for local vairables
-								fprintf(outfile, "MOV R0, 0\n");
-								for(i=0;i<k;i++)
-									fprintf(outfile,"PUSH R0\n");
+								if(k>0)
+									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 								
 								//codegeneration of functione body
 								codegen(outfile, $9);
@@ -226,8 +227,10 @@ Fdefinition :
 								fprintf(outfile, "POP BP\n");
 								
 								//return 
-								fprintf(outfile,"RET\n");				
+								fprintf(outfile,"RET\n");	
 							}
+							lsymtable = lsymtableLast = NULL;
+							fargTable = fargTableLast = NULL;
 					
 						}
 	;
@@ -235,37 +238,34 @@ Fdefinition :
 MainBlock :	INTEGER MAIN '(' ')' '{' ldeclaration fbody '}'	
 						{ 
 							fprintf(outfile,"MAIN :\n");
+							
 							//TODO: push the local variables in the stack
 							int k = getLocalVarCount();
 							int i = 0;
-					
-							//pushing space for local vairables
-							fprintf(outfile, "MOV R0, 0\n");
-							for(i=0;i<k;i++)
-								fprintf(outfile,"PUSH R0\n");
-					
+
+							if(k>0)
+								fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
+							
 							//codegeneration of functione body
 							codegen(outfile, $7);
 					
-							for(i=0;i<k;i++)
-								fprintf(outfile,"POP R0\n");
+							if(k>0)
+								fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nSUB R0, R1\nMOV SP, R0\n",k);
 							
 							//EXIT 
 							fprintf(outfile,"JMP EXIT\n");
 						}
 	;
 
-ldeclaration : DECL localdeclList ENDDECL
+
+ldeclaration : DECL localdeclList ENDDECL	{ argsToLocalVars(fargTable); }
 	;
 	
 		
-localdeclList :						{lvarType = 0; }
-	|	localdeclList INTEGER localvarlist ';'	{lvarType = INTEGER;
-							
-							}
-	|	localdeclList BOOLEAN localvarlist ';'	{lvarType = BOOLEAN;
-							
-							}
+localdeclList :	 {lvarType = 0; }
+	|	localdeclList INTEGER {lvarType = INTEGER;} localvarlist ';' {}
+	
+	|	localdeclList BOOLEAN {lvarType = BOOLEAN;} localvarlist ';' {}
 	;
 	
 localvarlist 	:	ID 			{ linstall($1, lvarType); }
@@ -282,37 +282,59 @@ slist	:			{$$=TreeCreate(VOID,SLIST,-1,NULL,NULL,NULL,NULL,NULL);}
 	|	slist stat	{$$=TreeCreate(VOID,SLIST,-1,NULL,NULL,$1,$2,NULL);}
 	;
 
-stat	:	ID ASG expr ';'			{
-							struct Gsymbol * v = Glookup($1);
-							struct Tnode *nid = TreeCreate(v->type,ID,($1[0]-'a'),$1,NULL,NULL,NULL,NULL);
-							nid->gentry = v;
-							$$=TreeCreate(VOID,ASG,-1,NULL,NULL,nid,$3,NULL);
-							
+stat	:	ID ASG expr ';'			{	
+							struct Lsymbol * l = Llookup($1);
+							if( l != NULL) {
+								//printf("Local Lookup");
+								struct Tnode *nid =TreeCreate(l->type,ID,-1,$1,NULL,NULL,NULL,NULL);
+								nid->lentry = l;
+								nid->gentry = NULL;
+								$$=TreeCreate(VOID,ASG,-1,NULL,NULL,nid,$3,NULL);
+							} else {
+								//printf("global lookup");
+								struct Gsymbol * v = Glookup($1);
+								struct Tnode *nid=TreeCreate(v->type,ID,-1,$1,NULL,NULL,NULL,NULL);
+								nid->gentry = v;
+								nid->lentry = NULL;
+								$$=TreeCreate(VOID,ASG,-1,NULL,NULL,nid,$3,NULL);
+							}
 						}
 	
 	|	ID '[' expr ']' ASG expr ';'	{
 							struct Gsymbol * v = Glookup($1);
-							struct Tnode *nid = TreeCreate(INTEGER,ID,($1[0]-'a'),$1,NULL,$3,NULL,NULL);
+							struct Tnode *nid = TreeCreate(INTEGER,ID,-1,$1,NULL,$3,NULL,NULL);
 							nid->gentry = v;
 							$$=TreeCreate(VOID,ASG,-1,NULL,NULL,nid,$6,NULL);
 						}
 						
 	|	READ '(' ID ')' ';'		{	
-							struct Gsymbol * v = Glookup($3);
-							struct Tnode *nid = TreeCreate(INTEGER,ID,($3[0]-'a'),$3,NULL,NULL,NULL,NULL);
-							nid->gentry = v;
-							$$=TreeCreate(VOID,READ,-1,NULL,NULL,nid,NULL,NULL);
+							struct Lsymbol * l = Llookup($3);
+							if( l != NULL) {
+								//printf("Local Lookup");
+								struct Tnode *nid =TreeCreate(l->type,ID,-1,$3,NULL,NULL,NULL,NULL);
+								nid->lentry = l;
+								nid->gentry = NULL;
+								$$=TreeCreate(VOID,READ,-1,NULL,NULL,nid,NULL,NULL);
+							} else {
+								//printf("global lookup");
+								struct Gsymbol * v = Glookup($3);
+								struct Tnode *nid=TreeCreate(v->type,ID,-1,$3,NULL,NULL,NULL,NULL);
+								nid->gentry = v;
+								nid->lentry = NULL;
+								$$=TreeCreate(VOID,READ,-1,NULL,NULL,nid,NULL,NULL);
+							}
 						}
 						
 	|	READ '(' ID '[' expr ']' ')' ';'	{	
 							struct Gsymbol * v = Glookup($3);
-							struct Tnode *nid = TreeCreate(INTEGER,ID,($3[0]-'a'),$3,NULL,$5,NULL,NULL);
+							struct Tnode *nid = TreeCreate(INTEGER,ID,-1,$3,NULL,$5,NULL,NULL);
 							nid->gentry = v;
 							$$=TreeCreate(VOID,READ,-1,NULL,NULL,nid,NULL,NULL);
 						}
 	
 	|	WRITE '(' expr ')' ';'			{$$=TreeCreate(VOID,WRITE,-1,NULL,NULL,$3,NULL,NULL);}
 	|	IF expr THEN slist ENDIF ';'		{$$=TreeCreate(VOID,IF,-1,NULL,NULL,$2,$4,NULL);}
+	|	IF expr THEN slist ELSE slist ENDIF ';'		{$$=TreeCreate(VOID,IF,-1,NULL,NULL,$2,$4,$6);}
 	|	WHILE expr DO slist ENDWHILE ';' 	{$$=TreeCreate(VOID,WHILE,-1,NULL,NULL,$2,$4,NULL);}
 	;
 
@@ -347,10 +369,12 @@ expr	:       NUM     	        {$$=TreeCreate(INTEGER,NUM,$1,NULL,NULL,NULL,NULL,
 	|	ID			{	
 						struct Lsymbol * l = Llookup($1);
 						if( l != NULL) {
+							//printf("Local Lookup");
 							$$=TreeCreate(l->type,ID,($1[0]-'a'),$1,NULL,NULL,NULL,NULL);
 							$$->lentry = l;
 							$$->gentry = NULL;
 						} else {
+							//printf("global lookup");
 							struct Gsymbol * v = Glookup($1);
 							$$=TreeCreate(v->type,ID,($1[0]-'a'),$1,NULL,NULL,NULL,NULL);
 							$$->gentry = v;
