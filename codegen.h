@@ -173,11 +173,13 @@ int codegen(FILE * fp, struct Tnode *node) {
 						} else {
 							//normal argument
 							i = getreg(fp);
-							int m = getreg(fp);
+							int m = getreg(fp),n = getreg(fp);;
 							fprintf(fp, "MOV R%d, BP\n",i);
 							fprintf(fp, "MOV R%d, %d\n",m,b);
 							fprintf(fp, "ADD R%d, R%d\n",i,m);
-							fprintf(fp, "PUSH R%d\n",i);
+							fprintf(fp, "MOV R%d, [R%d]\n",n,i);
+							fprintf(fp, "PUSH R%d\n",n);
+							freereg(fp);
 							freereg(fp);
 							freereg(fp);
 						}

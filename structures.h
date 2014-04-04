@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------------------------
 ArgStruct : Structure for the creating the argument list of the function at declaration.
-the attribute ptrType is set to 1 when argument had to be passed for reference (Call by Reference)
+the attribute ptrType is set to 1 when argument had to be passed by reference (Call by Reference)
 0 otherwise.
 ----------------------------------------------------------------------------------------*/
 struct ArgStruct{

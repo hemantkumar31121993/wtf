@@ -136,11 +136,11 @@ FargDef :
 	
 Farglist: 	ID				{	finsertVar($1,0); }
 	|	'&' ID				{	finsertVar($2,1); }
-	|	ID ',' Farglist 		{	
-							finsertVar($1,0);
+	|	Farglist ',' ID	 		{	
+							finsertVar($3,0);
 						}
-	|	'&' ID ',' Farglist		{
-							finsertVar($2,1);
+	|	Farglist ',' '&' ID		{
+							finsertVar($4,1);
 						}
 	;
 	
@@ -174,10 +174,11 @@ Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = 
 	
 	|	Fdefinition INTEGER ID '(' FargDef ')' '{' ldeclaration fbody '}' 
 						{	
+							
 							if(func_typecheck($3,fargTable,INTEGER,$9->ptr2->type)){
 								struct Gsymbol * f = Glookup($3);
 								
-								int k = getLocalVarCount() - getArgCount();
+								int k = getLocalVarCount() - getArgCount();  //local vars only
 								
 								int i = 0;
 								
@@ -277,7 +278,15 @@ MainBlock :	INTEGER MAIN '(' ')' '{' ldeclaration fbody '}'
 	;
 
 
-ldeclaration : DECL localdeclList ENDDECL	{ argsToLocalVars(fargTable); }
+ldeclaration : DECL localdeclList ENDDECL	{ 
+							argsToLocalVars(fargTable); 
+							printf("Local Symbol table");
+							struct Lsymbol *r = lsymtable;
+							while(r != NULL) {
+								printf("%s|%d|%d-->",r->name,r->type,r->magic);
+								r = r->next;
+							}
+						}
 	;
 	
 		
@@ -406,6 +415,13 @@ expr	:       NUM     	        {$$=TreeCreate(INTEGER,NUM,$1,NULL,NULL,NULL,NULL,
 					}	
 					
 	|	ID '(' arglist ')'	{	struct Gsymbol *v = Glookup($1);
+						struct ArgStruct *k = v->arglist;
+						struct Tnode * arg = $3;
+						while(arg != NULL && k!= NULL) {
+							printf("%s|%d|%d",arg->name,arg->type,k->ptrType);
+							arg = arg->sibling;
+							k = k->next;
+						}
 						//the ArgList pointer is used to point to arguments
 						if(argCompatibleToFunc(v, $3)) {
 							$$=TreeCreate(v->type,FUNCTION,-1,$1,$3,NULL,NULL,NULL);

@@ -17,7 +17,8 @@ is pushed into the stack and when freed the oldest register is popped from
 stack.
 
 BUG :: THIS LIMITS THE COUNT OF THE ARGUMENTS PASSED TO THE FUNCTION TO 8.
-NEED TO BE FIXED OR FIND A NEW WAY TO DO IT! 
+NEED TO BE FIXED OR FIND A NEW WAY TO DO IT!  
+// but stack can be used for preserving the extra regs needed and whenever required we can access from stack
 ----------------------------------------------------------------------*/
 int reg = 0;
 
@@ -376,12 +377,14 @@ int func_typecheck(char *name,struct ArgStruct *fargTable,int rettype,int type){
 int argCompatibleToFunc(struct Gsymbol * f, struct Tnode * args) {
 	int flag = 1;
 	struct ArgStruct * arglist = f->arglist;
+	int count = 0;
 	while( arglist != NULL && args != NULL) {
+		count++;
 		if(arglist->type != args->type) {
 			break;
 		}
 		if( (arglist->ptrType == 1 ) && ( args->nodetype != ID)) {
-			printf("ERROR : line %d : Reference Arguments to function %s must be an identifier.\n",yyline,f->name);
+			printf("ERROR : line %d : Reference Arguments (%d Argument) to function %s must be an identifier.\n",yyline,count,f->name);
 			return 0;
 		}
 		arglist = arglist->next;
@@ -415,9 +418,12 @@ binding value, so that they can be easily be reference relative to BP
 ------------------------------------------------------------------------------------------------------*/
 void argsToLocalVars(struct ArgStruct * args) {
 	//printf("Converting args to local vars");
-	int binding = -3;
+	int binding = -2;
 	struct ArgStruct * dummy = args;
-
+	while(dummy != NULL) {
+		binding--;
+		dummy = dummy->next;
+	}
 	
 	while(args != NULL) {
 		struct Lsymbol * l = (struct Lsymbol *)malloc(sizeof(struct Lsymbol));
@@ -428,7 +434,7 @@ void argsToLocalVars(struct ArgStruct * args) {
 		
 		l->next = lsymtable;
 		lsymtable = l;		
-		binding--;
+		binding++;
 		args = args->next;
 	}
 }

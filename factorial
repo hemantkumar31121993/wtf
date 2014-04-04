@@ -1,21 +1,22 @@
 decl
 	integer m;
-	integer factorial(integer k;);
+	integer factorial(integer k,l;);
 	integer swap(integer &a,&b;);
 	integer marx(integer &m;);
 	integer karl(integer &k;);
 	integer kara[3];
 enddecl
 
-integer factorial(integer k;) {
+integer factorial(integer k,l;) {
 	decl
 		integer n;
 	enddecl
 	begin	
+		write(k);
 		if (k==1) then
 			n=1;
 		else
-			n = k * factorial(k-1);
+			n = k * factorial(k-1,l);
 		endif;
 		return n;
 	end
@@ -54,23 +55,7 @@ integer main() {
 		integer k,a,b;
 	enddecl
 	begin	
-		a = 7;
-		b = 17;
-		write(a);
-		write(b);
-		k = swap(a,b);
-		write(a);
-		write(b);
-		k=factorial(6);
-		write(k);
-		a = karl(k);
-		write(k);
-		kara[0]=0;
-		kara[1]=1;
-		kara[2]=2;
-		kara[1] = karl(kara[2]);
-		write(kara[1]);
-		write(kara[2]);
+		k=factorial(factorial(3,2),2);
 		return 0;
 	end
 }

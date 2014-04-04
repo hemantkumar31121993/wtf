@@ -1,0 +1,35 @@
+decl
+	integer a,b, func(integer x;);
+enddecl
+
+integer func(integer x;)
+{
+	decl
+		integer t;
+	enddecl
+	begin
+		if(x>199) then t=200;
+		else
+			t= func(10+func(10+func(x+1)));
+		endif;
+		return t;
+	end
+}
+
+integer main()
+{
+
+	decl 
+		integer x;
+	enddecl
+	begin
+	
+	read(x);
+	while(x>0) do
+		
+		write(func(x));
+		read(x);
+	endwhile;
+	return 0;	
+	end
+}

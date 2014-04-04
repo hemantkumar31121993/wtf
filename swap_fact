@@ -1,0 +1,43 @@
+decl
+	integer swapfact(integer &x,&y,k;);
+enddecl
+
+integer swapfact(integer &x,&y,k;)
+{
+	decl
+		integer z,t;
+	enddecl
+	
+	begin
+		z=y;
+		y=x;
+		x=z;
+		write(k);
+		if(k==1) then
+			t=1;
+		else
+			t=k*swapfact(x,y,k-1);
+		endif;
+		return t;
+	end
+}
+
+integer main()
+{
+	decl
+		integer x,y,z,t;
+	enddecl
+	
+	begin
+		x=5;
+		y=6;
+		z=6;
+		t=swapfact(x,y,z);
+		write(x);
+		write(y);
+		write(t);
+		return 0;
+		
+	end
+}	
+		
