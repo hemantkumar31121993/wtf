@@ -10,7 +10,7 @@ integer func(integer x;)
 	begin
 		if(x>199) then t=200;
 		else
-			t= func(func(x+1));
+			t=func(func(func(x+1)));
 		endif;
 		return t;
 	end

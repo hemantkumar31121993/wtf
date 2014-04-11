@@ -1,5 +1,6 @@
 decl
 	integer swapfact(integer &x,&y,k;);
+	integer i;
 enddecl
 
 integer swapfact(integer &x,&y,k;)
@@ -12,7 +13,6 @@ integer swapfact(integer &x,&y,k;)
 		z=y;
 		y=x;
 		x=z;
-		write(k);
 		if(k==1) then
 			t=1;
 		else
@@ -29,9 +29,10 @@ integer main()
 	enddecl
 	
 	begin
+		i=1;
 		x=5;
 		y=6;
-		z=5;
+		read(z);
 		t=swapfact(x,y,z);
 		write(x);
 		write(y);

@@ -55,8 +55,7 @@ integer main() {
 		integer k,a,b;
 	enddecl
 	begin	
-		k=factorial(factorial(3,2),2);
-		write(k);
+		k=factorial(factorial(factorial(3,2),2),2);
 		return 0;
 	end
 }

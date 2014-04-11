@@ -171,14 +171,14 @@ int codegen(FILE * fp, struct Tnode *node) {
 							freereg(fp);
 							freereg(fp);
 						} else {
-							//normal argument
+							//normal argument and local variables
 							i = getreg(fp);
 							int m = getreg(fp),n = getreg(fp);;
 							fprintf(fp, "MOV R%d, BP\n",i);
 							fprintf(fp, "MOV R%d, %d\n",m,b);
 							fprintf(fp, "ADD R%d, R%d\n",i,m);
-							fprintf(fp, "MOV R%d, [R%d]\n",n,i);
-							fprintf(fp, "PUSH R%d\n",n);
+							/*fprintf(fp, "MOV R%d, [R%d]\n",n,i); */
+							fprintf(fp, "PUSH R%d\n",i);
 							freereg(fp);
 							freereg(fp);
 							freereg(fp);
@@ -358,29 +358,27 @@ int codegen(FILE * fp, struct Tnode *node) {
 					int k = node->ptr1->lentry->binding;
 					if(node->ptr1->lentry->magic) {
 						//read to reference parameter
-						int i = codegen(fp,node->ptr2);
-						int l = getreg(fp);
-						int m = getreg(fp);
-						int n = getreg(fp);
-						fprintf(fp, "MOV R%d, BP\n",l);
-						fprintf(fp, "MOV R%d, %d\n",m,k);
-						fprintf(fp, "ADD R%d, R%d\n",l,m);
-						fprintf(fp, "MOV R%d, [R%d]\n",n,l); 
-						fprintf(fp, "MOV [R%d], R%d\n",n,i);
-						freereg(fp);
+						int i = getreg(fp);
+						fprintf(fp,"IN R%d\n",i);
+						int m = getreg(fp), n=getreg(fp);
+						fprintf(fp,"MOV R%d, BP\n",m);
+						fprintf(fp,"MOV R%d, %d\n",n,k);
+						fprintf(fp,"ADD R%d, R%d\n",m,n);
+						fprintf(fp,"MOV R%d, [R%d]\n",n,m);
+						fprintf(fp,"MOV [R%d], R%d\n",n,i);
 						freereg(fp);
 						freereg(fp);
 						freereg(fp);
 					
 					} else {
 						//read to normal parameter and local variables
-						int i = codegen(fp,node->ptr2);
-						int l = getreg(fp);
-						int m = getreg(fp);
-						fprintf(fp, "MOV R%d, BP\n",l);
-						fprintf(fp, "MOV R%d, %d\n",m,k);
-						fprintf(fp, "ADD R%d, R%d\n",l,m);
-						fprintf(fp, "MOV [R%d], R%d\n",l,i);
+						int i = getreg(fp);
+						fprintf(fp,"IN R%d\n",i);
+						int m = getreg(fp), n=getreg(fp);
+						fprintf(fp,"MOV R%d, BP\n",m);
+						fprintf(fp,"MOV R%d, %d\n",n,k);
+						fprintf(fp,"ADD R%d, R%d\n",m,n);
+						fprintf(fp,"MOV [R%d], R%d\n",m,i);
 						freereg(fp);
 						freereg(fp);
 						freereg(fp);
