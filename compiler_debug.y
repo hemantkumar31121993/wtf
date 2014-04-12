@@ -151,7 +151,7 @@ pushed first and then so on.
 
 So the state of stack before call of the function
 	
-SP -->	|--------------|
+	|--------------|
 	| Argument 1   |
 	|--------------|
 	| Argument 2   |
@@ -164,7 +164,7 @@ SP -->	|--------------|
 	|--------------|
 	| Argument N-1 |
 	|--------------|
-	| Argument N   |
+SP --->	| Argument N   |
 	|--------------|
 
 Therefore, it is convinient to first create the list of arguments last to first then pushing
@@ -187,11 +187,7 @@ Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = 
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								/*if (k>0) {
-									fprintf(outfile, "MOV R0, 0\n");
-									for(i=0;i<k;i++)
-										fprintf(outfile,"PUSH R0\n");
-								} --OBSELETE*/
+
 								if(k>0)
 									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 								
@@ -224,11 +220,6 @@ Fdefinition :			{ lsymtable = lsymtableLast = NULL; fargTable = fargTableLast = 
 								fprintf(outfile, "PUSH BP\nMOV BP, SP\n");
 								
 								//pushing space for local vairables
-								/*if (k>0) {
-									fprintf(outfile, "MOV R0, 0\n");
-									for(i=0;i<k;i++)
-										fprintf(outfile,"PUSH R0\n");
-								} --OBSELETE */
 								
 								if(k>0)
 									fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
@@ -258,11 +249,6 @@ MainBlock :	INTEGER MAIN '(' ')' '{' ldeclaration fbody '}'
 							int i = 0;
 					
 							//pushing space for local vairables
-							/*if(k>0) {
-								fprintf(outfile, "MOV R0, 0\n");
-								for(i=0;i<k;i++)
-									fprintf(outfile,"PUSH R0\n");
-							} --OBSELETE*/
 							if(k>0)
 								fprintf(outfile, "MOV R0, SP\nMOV R1, %d\nADD R0, R1\nMOV SP, R0\n",k);
 							

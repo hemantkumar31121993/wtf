@@ -7,7 +7,7 @@ has to push all its current register, arguements to the function, blank space fo
 value.
 So the state of stack just before function call is somthing like this
 
-SP -->	|--------------|
+	|--------------|
 	| Register Rk  |
 	|--------------|
 	| Register Rk-1|
@@ -24,7 +24,7 @@ SP -->	|--------------|
 	|--------------|
 	| Argument N-1 |
 	|--------------|
-	| Argument N   |
+SP --->	| Argument N   |
 	|--------------| 
 
 After the return from the function call, callee has to pop out the arguments from the
@@ -202,11 +202,7 @@ int codegen(FILE * fp, struct Tnode *node) {
 			fprintf(fp, "MOV R%d, [SP]\n", k);
 			
 			/* cleaning up the arguments pushed and return value */
-			/*i = argCount;
-			while(i>=0) {
-				fprintf(fp, "POP R%d\n",(k+1));
-				i--;
-			} --OBSELETE*/
+
 			fprintf(fp, "MOV R%d, SP\nMOV R%d, %d\nSUB R%d, R%d\nMOV SP, R%d\n", (k+1),(k+2),(argCount + 1),(k+1),(k+2),(k+1));
 			
 			i=0;

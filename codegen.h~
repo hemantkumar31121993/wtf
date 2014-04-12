@@ -7,7 +7,7 @@ has to push all its current register, arguements to the function, blank space fo
 value.
 So the state of stack just before function call is somthing like this
 
-SP -->	|--------------|
+	|--------------|
 	| Register Rk  |
 	|--------------|
 	| Register Rk-1|
@@ -24,7 +24,7 @@ SP -->	|--------------|
 	|--------------|
 	| Argument N-1 |
 	|--------------|
-	| Argument N   |
+SP --->	| Argument N   |
 	|--------------| 
 
 After the return from the function call, callee has to pop out the arguments from the

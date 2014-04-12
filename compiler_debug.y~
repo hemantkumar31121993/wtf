@@ -136,7 +136,7 @@ FargDef :
 	
 Farglist: 	ID				{	finsertVar($1,0); }
 	|	'&' ID				{	finsertVar($2,1); }
-	|	Farglist ',' ID	 	{	
+	|	Farglist ',' ID	 		{	
 							finsertVar($3,0);
 						}
 	|	Farglist ',' '&' ID		{
@@ -151,7 +151,7 @@ pushed first and then so on.
 
 So the state of stack before call of the function
 	
-SP -->	|--------------|
+	|--------------|
 	| Argument 1   |
 	|--------------|
 	| Argument 2   |
@@ -164,7 +164,7 @@ SP -->	|--------------|
 	|--------------|
 	| Argument N-1 |
 	|--------------|
-	| Argument N   |
+SP --->	| Argument N   |
 	|--------------|
 
 Therefore, it is convinient to first create the list of arguments last to first then pushing
