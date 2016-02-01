@@ -8,6 +8,12 @@
 	extern FILE * yyin;
 	FILE * outfile;
 	
+	/* data type handling */
+	int gdt, ldt, fadt;
+	
+	/* user defined data type counter, to give number to user defined data types */
+	int uddtc = 3;
+
 	//Error Handling function
 	void yyerror(const char * str) { fprintf(stderr,"Syntax Error: %s\n",str); }
 	
@@ -15,14 +21,18 @@
 	int yywrap() { return 1; }
 	
 	int main(int argc, char * argv[]) {
-	
+		
+		char *outname;
+
 		if(argc < 2) {
 			printf("Usage: ./compiler <filename>\n");
 			return 0;
 		}
 		
 		FILE * fp = fopen(argv[1],"r");
-		outfile = fopen("program.sim", "w");
+		outname = (char *)malloc(strlen(argv[1]) + 4);
+		sprintf(outname, "%s.sim", argv[1]);
+		outfile = fopen(outname, "w");
 		
 		if(!fp) {
 			printf("Error 404 : File not Found. Go and Search for it :p\n");
@@ -38,6 +48,7 @@
 		yyparse();
 		fprintf(outfile, "EXIT:\nHALT\n");
 		
+		free(outname);
 		return 1;
 	}
 %}
@@ -84,8 +95,25 @@ Gdeclaration :	DECL Gdeclist ENDDECL	{ 	/*struct Gsymbol * p = symtable;
 						} */
 					}
 	;
-Gdeclist :	
-	|	 Gdeclist INTEGER Gvarlist ';'	{	struct VarList * p;
+DataType:
+	|	INTEGER	{gdt = INTEGER; }
+	
+	|	BOOLEAN	{gdt = BOOLEAN; }
+
+	;
+Gdeclist :
+	|	 Gdeclist DataType Gvarlist ';'	{	struct VarList * p;
+							while(vstart != NULL) {
+								Ginstall(vstart->name,gdt,vstart->size,vstart->arglist);
+								p = vstart;
+								vstart = vstart->next;
+								free(p);
+							}
+							vstart = NULL;
+							vend = NULL;
+						}
+
+/*	|	 Gdeclist INTEGER Gvarlist ';'	{	struct VarList * p;
 							while(vstart != NULL) {
 								Ginstall(vstart->name,INTEGER,vstart->size,vstart->arglist);
 								p = vstart;
@@ -104,7 +132,7 @@ Gdeclist :
 							}
 							vstart = NULL;
 							vend = NULL;
-						}
+						}*/
 	;
 	
 Gvarlist:	ID				{insertVar($1,1,0);}
